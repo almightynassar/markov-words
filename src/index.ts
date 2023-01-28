@@ -5,8 +5,6 @@
  * written and released to the public domain by drow <drow@bin.sh>
  */
 
-import fs from 'fs'
-
 /**
  * Markov Token store
  */
@@ -200,15 +198,6 @@ export default class MarkovWords {
       grandparent = name.charAt(name.length - 2)
     }
     return name
-  }
-
-  /**
-   * Export dataset
-   *
-   * @param filename
-   */
-  public export(filename) {
-    fs.writeFile(filename + '.json', JSON.stringify(this.data), function(err) {if (err) throw err;})
   }
 
   /**
