@@ -1,5 +1,5 @@
 /**
- * markov-words
+ * almighty-markov-words
  *
  * Based off of name_generator.js
  * written and released to the public domain by drow <drow@bin.sh>
