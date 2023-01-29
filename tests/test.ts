@@ -98,8 +98,11 @@ describe('Markov Words', () => {
     })
     it('should generate word', () => {
       const name = markov.generate()
-      console.log(name)
       expect(name).toBeDefined()
+    })
+    it('should generate list of words', () => {
+      const list = markov.generateList()
+      expect(list).toHaveLength(10)
     })
   })
 })

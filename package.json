@@ -1,6 +1,6 @@
 {
     "name": "almighty-markov-words",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Generate words based off an input list (i.e. list of names)",
     "author": "almightynassar",
     "license": "CC0-1.0",

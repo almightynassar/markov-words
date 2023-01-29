@@ -201,6 +201,22 @@ export default class MarkovWords {
   }
 
   /**
+   * Generate a list of words
+   *
+   * @param total
+   * @param totalAttempts
+   *
+   * @return Array<string>
+   */
+  public generateList(total:number = 10, totalAttempts:number = 5) {
+    let list = []
+    for (let i = 0; i < total; i++) {
+      list.push(this.generate(totalAttempts))
+    }
+    return list
+  }
+
+  /**
    * Initiliase the token in the chain array
    *
    * @param chain
