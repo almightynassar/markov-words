@@ -1,4 +1,5 @@
 # almighty-markov-words
+
 Generate words based off an input list (i.e. list of names)
 
 ## Installing
@@ -12,7 +13,9 @@ const Markov = require('almighty-markov-words').default
 // or
 import Markov from 'almighty-markov-words'
 
-const data = [/* insert a few hundreds/thousands sentences here */]
+const data = [
+  /* insert a few hundreds/thousands sentences here */
+]
 
 // Build the Markov generator
 const markov = new Markov(data)

@@ -94,7 +94,7 @@ describe('Markov Words', () => {
       const markov = new MarkovWords(data)
       expect(markov.data.meta.sum).toBeGreaterThan(0)
     })
-    it('should have total', () =>{
+    it('should have total', () => {
       const markov = new MarkovWords(data)
       expect(markov.data.meta.total).toBeGreaterThan(0)
     })
