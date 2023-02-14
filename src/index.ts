@@ -6,6 +6,10 @@
  */
 
 /**
+ * Chain types
+ */
+export type ChainType = 'ends' | 'letters' | 'meta'
+/**
  * Markov Token store
  */
 export type MarkovToken = {
@@ -24,7 +28,7 @@ export type MarkovWeight = {
  * Markov Parent store
  */
 export type MarkovParent = {
-  [key: string|null|undefined]: MarkovWeight
+  [key: string]: MarkovWeight
 }
 
 /**
@@ -42,13 +46,28 @@ export type MarkovMeta = {
  * Our Markov data store
  */
 export type MarkovData = {
-  "ends": {
-    [key: string|null|undefined]: MarkovParent
+  ends: {
+    [key: string]: MarkovParent
   }
-  "letters": {
-    [key: string|null|undefined]: MarkovParent
+  letters: {
+    [key: string]: MarkovParent
   }
-  "meta": MarkovMeta
+  meta: MarkovMeta
+}
+
+/**
+ * Our initial state
+ */
+const INIT_STATE: MarkovData = {
+  ends: {},
+  letters: {},
+  meta: {
+    sum: 0,
+    total: 0,
+    average: 0,
+    min: Infinity,
+    max: 0,
+  },
 }
 
 export default class MarkovWords {
@@ -63,7 +82,10 @@ export default class MarkovWords {
    * @memberof MarkovWords
    */
   constructor(list?: Array<string>) {
-    this.rebuild(list)
+    this.data = INIT_STATE
+    if (Array.isArray(list)) {
+      this.rebuild(list)
+    }
   }
 
   /**
@@ -72,17 +94,7 @@ export default class MarkovWords {
    * @memberof MarkovWords
    */
   public reset() {
-    this.data = {
-      ends: {},
-      letters: {},
-      meta: {
-        sum: 0,
-        total: 0,
-        average: 0,
-        min: Infinity,
-        max: 0,
-      }
-    }
+    this.data = INIT_STATE
   }
 
   /**
@@ -90,10 +102,12 @@ export default class MarkovWords {
    *
    * @param list The name list
    */
-  public rebuild(list?: Array<string>){
+  public rebuild(list?: Array<string>) {
     this.reset()
-    if (Array.isArray(list)) this.build(list)
-    this.scaleWeights()
+    if (Array.isArray(list)) {
+      this.build(list)
+      this.scaleWeights()
+    }
   }
 
   /**
@@ -101,18 +115,18 @@ export default class MarkovWords {
    *
    * @param Array<string> List of names or words
    */
-  public build(list?: Array<string>) {
+  public build(list: Array<string>) {
     // Iterate over the given list
-    list.forEach(word => {
+    list.forEach((word) => {
       // Initialise our keys
-      let grandparent = ""
-      let parent = ""
+      let grandparent = ''
+      let parent = ''
       let idx = 0
       // Generate the raw data
-      word.split('').forEach(letter => {
+      word.split('').forEach((letter) => {
         // If we are at the end, save to ends chain. Otherwise, letters
         idx++
-        let chain = (idx !== word.length) ? 'letters' : 'ends'
+        let chain: ChainType = idx !== word.length ? 'letters' : 'ends'
         // Ensure we have keys
         this.initialiseToken(chain, grandparent, parent, letter)
         // Increment the value
@@ -125,7 +139,6 @@ export default class MarkovWords {
       this.data.meta.sum += word.length
       if (word.length > this.data.meta.max) this.data.meta.max = word.length
       if (word.length < this.data.meta.min) this.data.meta.min = word.length
-
     })
     // Save how many words were processed
     this.data.meta.total += list.length
@@ -138,11 +151,11 @@ export default class MarkovWords {
    * @memberof MarkovWords
    */
   public scaleWeights() {
-    for (const chain of ["ends", "letters"]) {
+    for (let chain of ['ends', 'letters']) {
       for (const grandparent in this.data[chain]) {
         for (const parent in this.data[chain][grandparent]) {
           for (const [letter, count] of Object.entries(this.data[chain][grandparent][parent].weights)) {
-            if (typeof count == "number") {
+            if (typeof count == 'number') {
               let weighted = Math.floor(Math.pow(count, 1.3))
               this.data[chain][grandparent][parent].weights[letter] = weighted
               this.data[chain][grandparent][parent].scale += weighted
@@ -160,7 +173,7 @@ export default class MarkovWords {
    *
    * @return string
    */
-  public generate(totalAttempts:number = 5) {
+  public generate(totalAttempts: number = 5) {
     // Set up the variables
     let grandparent = ''
     let parent = ''
@@ -171,7 +184,7 @@ export default class MarkovWords {
     let endingFound = false
     while (!endingFound) {
       // Should we look for an ending?
-      if (name.length > (length - 1)) {
+      if (name.length > length - 1) {
         let ending = this.selectToken('ends', grandparent, parent)
         if (ending !== '~') {
           name += ending
@@ -208,7 +221,7 @@ export default class MarkovWords {
    *
    * @return Array<string>
    */
-  public generateList(total:number = 10, totalAttempts:number = 5) {
+  public generateList(total: number = 10, totalAttempts: number = 5) {
     let list = []
     for (let i = 0; i < total; i++) {
       list.push(this.generate(totalAttempts))
@@ -224,7 +237,7 @@ export default class MarkovWords {
    * @param parent
    * @param token
    */
-  private initialiseToken(chain:string, grandparent:string, parent:string, token:string) {
+  private initialiseToken(chain: ChainType, grandparent: string, parent: string, token: string) {
     if (!this.data[chain][grandparent]) this.data[chain][grandparent] = {}
     if (!this.data[chain][grandparent][parent]) this.data[chain][grandparent][parent] = {}
     if (!this.data[chain][grandparent][parent].weights) this.data[chain][grandparent][parent].weights = {}
@@ -241,14 +254,14 @@ export default class MarkovWords {
    *
    * @return String
    */
-  private selectToken(chain:string, grandparent:string, parent:string) {
+  private selectToken(chain: string, grandparent: string, parent: string) {
     // Make sure the tokens exists
     if (this.data[chain][grandparent]) {
       if (this.data[chain][grandparent][parent]) {
         const rndm = Math.floor(Math.random() * this.data[chain][grandparent][parent].scale)
         let index = 0
         for (const [letter, weight] of Object.entries(this.data[chain][grandparent][parent].weights)) {
-          if (typeof weight == "number") {
+          if (typeof weight == 'number') {
             index += weight
             if (rndm < index) {
               return letter

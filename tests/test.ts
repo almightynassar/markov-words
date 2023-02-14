@@ -80,27 +80,31 @@ const data = [
 
 describe('Markov Words', () => {
   describe('Blank Constructor', () => {
-    const markov = new MarkovWords()
     it('sum should be 0', () => {
+      const markov = new MarkovWords()
       expect(markov.data.meta.sum).toBe(0)
     })
-    it('total should be 0', () =>{
+    it('total should be 0', () => {
+      const markov = new MarkovWords()
       expect(markov.data.meta.total).toBe(0)
     })
   })
   describe('Filled Constructor', () => {
-    const markov = new MarkovWords(data)
     it('should have sum', () => {
+      const markov = new MarkovWords(data)
       expect(markov.data.meta.sum).toBeGreaterThan(0)
     })
     it('should have total', () =>{
+      const markov = new MarkovWords(data)
       expect(markov.data.meta.total).toBeGreaterThan(0)
     })
     it('should generate word', () => {
+      const markov = new MarkovWords(data)
       const name = markov.generate()
       expect(name).toBeDefined()
     })
     it('should generate list of words', () => {
+      const markov = new MarkovWords(data)
       const list = markov.generateList()
       expect(list).toHaveLength(10)
     })
