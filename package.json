@@ -11,14 +11,20 @@
     "type": "git",
     "url": "https://github.com/almightynassar/markov-words"
   },
+  "bugs": {
+    "url": "https://github.com/almightynassar/markov-words/issues"
+  },
+  "homepage": "https://github.com/almightynassar/markov-words#readme",
   "keywords": [
-    "markov",
-    "string",
     "chain",
-    "procedural",
     "generation",
+    "markov",
+    "name",
+    "procedural",
+    "random",
+    "string",
     "text",
-    "name"
+    "typescript"
   ],
   "main": "dist/index.js",
   "scripts": {

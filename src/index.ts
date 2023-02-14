@@ -1,3 +1,4 @@
+import * as Markov from "./typings/Markov"
 /**
  * almighty-markov-words
  *
@@ -9,56 +10,11 @@
  * Chain types
  */
 export type ChainType = 'ends' | 'letters' | 'meta'
-/**
- * Markov Token store
- */
-export type MarkovToken = {
-  [key: string]: number
-}
-
-/**
- * Markov Weight store
- */
-export type MarkovWeight = {
-  weights: MarkovToken
-  scale: number
-}
-
-/**
- * Markov Parent store
- */
-export type MarkovParent = {
-  [key: string]: MarkovWeight
-}
-
-/**
- * Markov Meta store
- */
-export type MarkovMeta = {
-  sum: number
-  total: number
-  average: number
-  min: number
-  max: number
-}
-
-/**
- * Our Markov data store
- */
-export type MarkovData = {
-  ends: {
-    [key: string]: MarkovParent
-  }
-  letters: {
-    [key: string]: MarkovParent
-  }
-  meta: MarkovMeta
-}
 
 /**
  * Our initial state
  */
-const INIT_STATE: MarkovData = {
+const INIT_STATE: Markov.Data = {
   ends: {},
   letters: {},
   meta: {
@@ -74,7 +30,7 @@ export default class MarkovWords {
   /**
    * Stores all our required data
    */
-  public data: MarkovData
+  public data: Markov.Data
 
   /**
    * Creates a blank instance of Markov generator.
