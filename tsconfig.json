@@ -3,17 +3,14 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "noImplicitAny": false,
+    // "strict": true,
+    // "noImplicitAny": true,
     "noEmitOnError": true,
     "removeComments": true,
     "sourceMap": true,
     "outDir": "dist",
     "esModuleInterop": true
   },
-  "exclude": [
-      "node_modules"
-  ],
-  "include": [
-    "src/**/*"
-  ]
+  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*"]
 }

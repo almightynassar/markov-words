@@ -24,7 +24,8 @@
     "scripts": {
         "build": "tsc --build",
         "clean": "tsc --build --clean",
-        "test": "jest --coverage"
+        "test": "jest --coverage",
+        "watch": "tsc -w"
     },
     "devDependencies": {
         "@types/jest": "^29.4.0",
