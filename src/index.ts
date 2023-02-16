@@ -1,4 +1,4 @@
-import * as Markov from "./typings/Markov"
+import * as Markov from './typings/Markov'
 /**
  * almighty-markov-words
  *
@@ -28,6 +28,16 @@ const INIT_STATE: Markov.Data = {
 
 export default class MarkovWords {
   /**
+   * Stores the number of layers to generate letter links
+   */
+  private layers: number
+
+  /**
+   * Stores the total number of attempts
+   */
+  private totalAttempts: number
+
+  /**
    * Stores all our required data
    */
   public data: Markov.Data
@@ -35,9 +45,12 @@ export default class MarkovWords {
   /**
    * Creates a blank instance of Markov generator.
    *
-   * @memberof MarkovWords
+   * @param {Array<string>} list
+   * @param {number} layers
    */
-  constructor(list?: Array<string>) {
+  constructor(list?: Array<string>, layers: number = 2, totalAttempts: number = 5) {
+    this.layers = layers
+    this.totalAttempts = totalAttempts
     this.data = INIT_STATE
     if (Array.isArray(list)) {
       this.rebuild(list)
@@ -46,8 +59,6 @@ export default class MarkovWords {
 
   /**
    * Reset all data
-   *
-   * @memberof MarkovWords
    */
   public reset() {
     this.data = INIT_STATE
@@ -56,7 +67,7 @@ export default class MarkovWords {
   /**
    * Rebuild the whole array from scratch (include scaling)
    *
-   * @param list The name list
+   * @param {Array<string>} list The name list
    */
   public rebuild(list?: Array<string>) {
     this.reset()
@@ -75,8 +86,10 @@ export default class MarkovWords {
     // Iterate over the given list
     list.forEach((word) => {
       // Initialise our keys
-      let grandparent = ''
-      let parent = ''
+      let tokens = []
+      for (let i = 0; i < this.layers; i++) {
+        tokens[i] = ''
+      }
       let idx = 0
       // Generate the raw data
       word.split('').forEach((letter) => {
@@ -84,12 +97,13 @@ export default class MarkovWords {
         idx++
         let chain: ChainType = idx !== word.length ? 'letters' : 'ends'
         // Ensure we have keys
-        this.initialiseToken(chain, grandparent, parent, letter)
+        this.initialiseToken(chain, tokens, letter)
         // Increment the value
-        this.data[chain][grandparent][parent]['weights'][letter]++
-        // Shuffle our keys
-        grandparent = parent
-        parent = letter
+        this.incrementToken(chain, tokens, letter)
+        // Shuffle our token keys
+        for (let i = 0; i < this.layers; i++) {
+          tokens[i] = i === this.layers - 1 ? letter : tokens[i + 1]
+        }
       })
       // Add the words length to sum
       this.data.meta.sum += word.length
@@ -108,63 +122,64 @@ export default class MarkovWords {
    */
   public scaleWeights() {
     for (let chain of ['ends', 'letters']) {
-      for (const grandparent in this.data[chain]) {
-        for (const parent in this.data[chain][grandparent]) {
-          for (const [letter, count] of Object.entries(this.data[chain][grandparent][parent].weights)) {
-            if (typeof count == 'number') {
-              let weighted = Math.floor(Math.pow(count, 1.3))
-              this.data[chain][grandparent][parent].weights[letter] = weighted
-              this.data[chain][grandparent][parent].scale += weighted
-            }
-          }
-        }
-      }
+      this.recursiveScaling(this.data[chain])
     }
   }
 
   /**
    * Generate a word
    *
-   * @param totalAttempts Number of total attempts
-   *
-   * @return string
+   * @param {number} desiredLength
    */
-  public generate(totalAttempts: number = 5) {
+  public generate(desiredLength?: number) {
+    // Initialise our keys
+    let tokens = []
+    for (let i = 0; i < this.layers; i++) {
+      tokens[i] = ''
+    }
     // Set up the variables
-    let grandparent = ''
-    let parent = ''
     let name = ''
-    let length = Math.floor(Math.random() * (this.data.meta.max - this.data.meta.min + 1) + this.data.meta.min)
+    let length =
+      typeof desiredLength == 'number'
+        ? desiredLength
+        : Math.floor(Math.random() * (this.data.meta.max - this.data.meta.min + 1) + this.data.meta.min)
     let attempts = 0
     // Ending found variable
     let endingFound = false
     while (!endingFound) {
+      // Find a letter
+      let token = this.selectToken('letters', tokens)
+      if (token !== '�') {
+        name += token
+        // Shuffle our token keys
+        for (let i = 0; i < this.layers; i++) {
+          tokens[i] = i === this.layers - 1 ? token : tokens[i + 1]
+        }
+        continue
+      }
       // Should we look for an ending?
-      if (name.length > length - 1) {
-        let ending = this.selectToken('ends', grandparent, parent)
-        if (ending !== '~') {
+      if (name.length > length - 1 || token == '�') {
+        let ending = this.selectToken('ends', tokens)
+        if (ending !== '�') {
           name += ending
           endingFound = true
           continue
         }
       }
-      // Find a letter
-      let token = this.selectToken('letters', grandparent, parent)
-      if (token !== '~') {
-        name += token
-        grandparent = parent
-        parent = token
-        continue
-      }
       // If we got to here, we could not find something
       attempts++
-      if (attempts >= totalAttempts) {
+      if (attempts >= this.totalAttempts) {
+        name += token
         endingFound = true
         continue
       }
-      name = name.substring(0, name.length - 1)
-      parent = name.charAt(name.length - 1)
-      grandparent = name.charAt(name.length - 2)
+      // Chop out some text and try again
+      const runItBack = attempts < name.length - 1 ? attempts : 1
+      name = name.substring(0, name.length - runItBack)
+      // Shuffle our token keys
+      for (let i = this.layers - 1; i >= 0; i--) {
+        tokens[i] = name.charAt(name.length - (tokens.length - i))
+      }
     }
     return name
   }
@@ -172,15 +187,15 @@ export default class MarkovWords {
   /**
    * Generate a list of words
    *
-   * @param total
-   * @param totalAttempts
+   * @param {number} total
+   * @param {number} desiredLength
    *
    * @return Array<string>
    */
-  public generateList(total: number = 10, totalAttempts: number = 5) {
+  public generateList(total: number = 10, desiredLength?: number) {
     let list = []
     for (let i = 0; i < total; i++) {
-      list.push(this.generate(totalAttempts))
+      list.push(this.generate(desiredLength))
     }
     return list
   }
@@ -188,44 +203,103 @@ export default class MarkovWords {
   /**
    * Initiliase the token in the chain array
    *
-   * @param chain
-   * @param grandparent
-   * @param parent
-   * @param token
+   * @param {ChainType} chain
+   * @param {Array<string>} tokens
+   * @param {string} token
    */
-  private initialiseToken(chain: ChainType, grandparent: string, parent: string, token: string) {
-    if (!this.data[chain][grandparent]) this.data[chain][grandparent] = {}
-    if (!this.data[chain][grandparent][parent]) this.data[chain][grandparent][parent] = {}
-    if (!this.data[chain][grandparent][parent].weights) this.data[chain][grandparent][parent].weights = {}
-    if (!this.data[chain][grandparent][parent].scale) this.data[chain][grandparent][parent].scale = 0
-    if (!this.data[chain][grandparent][parent].weights[token]) this.data[chain][grandparent][parent].weights[token] = 0
+  private initialiseToken(chain: ChainType, tokens: Array<string>, letter: string) {
+    let reference = this.data[chain]
+    for (let i = 0; i < this.layers; i++) {
+      if (i === this.layers - 1) {
+        if (!reference[tokens[i]]) reference[tokens[i]] = {}
+        if (!reference[tokens[i]].weights) reference[tokens[i]].weights = {}
+        if (!reference[tokens[i]].scale) reference[tokens[i]].scale = 0
+        if (!reference[tokens[i]].weights[letter]) reference[tokens[i]].weights[letter] = 0
+      } else {
+        if (!reference[tokens[i]]) reference[tokens[i]] = {}
+      }
+      reference = reference[tokens[i]]
+    }
+  }
+
+  /**
+   * Increment the weight of a token
+   *
+   * @param {ChainType} chain
+   * @param {Array<string>} tokens
+   * @param {string} token
+   */
+  private incrementToken(chain: ChainType, tokens: Array<string>, letter: string) {
+    let reference = this.data[chain]
+    for (let i = 0; i < this.layers; i++) {
+      if (i === this.layers - 1) {
+        reference[tokens[i]].weights[letter]++
+      }
+      reference = reference[tokens[i]]
+    }
+  }
+
+  /**
+   * Allows us to recursively iterate over many different children elements
+   *
+   * @param reference
+   */
+  private recursiveScaling(reference: object) {
+    if (reference.hasOwnProperty('weights')) {
+      for (const [letter, count] of Object.entries(reference['weights'])) {
+        if (typeof count == 'number') {
+          let weighted = Math.floor(Math.pow(count, 1.3))
+          reference['weights'][letter] = weighted
+          reference['scale'] += weighted
+        }
+      }
+    } else {
+      for (const child in reference) {
+        this.recursiveScaling(reference[child])
+      }
+    }
   }
 
   /**
    * Select a token from a chain
    *
-   * @param chain
-   * @param grandparent
-   * @param parent
+   * @param {string} chain
+   * @param {Array<string>} tokens
    *
    * @return String
    */
-  private selectToken(chain: string, grandparent: string, parent: string) {
-    // Make sure the tokens exists
-    if (this.data[chain][grandparent]) {
-      if (this.data[chain][grandparent][parent]) {
-        const rndm = Math.floor(Math.random() * this.data[chain][grandparent][parent].scale)
-        let index = 0
-        for (const [letter, weight] of Object.entries(this.data[chain][grandparent][parent].weights)) {
-          if (typeof weight == 'number') {
-            index += weight
-            if (rndm < index) {
-              return letter
+  private selectToken(chain: string, tokens: Array<string>) {
+    try {
+      // Make sure the tokens exists
+      if (this.data.hasOwnProperty(chain)) {
+        // Set our reference
+        let reference = this.data[chain]
+        tokens.forEach((element) => {
+          reference = reference[element]
+        })
+        // Make sure our weights exist
+        if (reference) {
+          if (reference.hasOwnProperty('weights') && reference.hasOwnProperty('scale')) {
+            // Randomly generate a number
+            const rndm = Math.floor(Math.random() * reference['scale'])
+            // Find the letter that has a weight value larger than our random value
+            let index = 0
+            for (const [letter, weight] of Object.entries(reference['weights'])) {
+              if (typeof weight == 'number') {
+                index += weight
+                if (rndm <= index) {
+                  return letter
+                }
+              }
             }
+          } else {
+            throw new Error("MarkovWords.selectToken: weights dont' exits")
           }
         }
       }
+    } catch (error) {
+      console.log(error)
     }
-    return '~'
+    return '�'
   }
 }

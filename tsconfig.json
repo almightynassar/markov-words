@@ -9,7 +9,7 @@
     "removeComments": true,
     "sourceMap": true,
     "outDir": "dist",
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*"]
