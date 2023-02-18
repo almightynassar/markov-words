@@ -15,7 +15,7 @@ describe('Filled Constructor', () => {
     expect(name).toBeDefined()
   })
   it('should generate list of words', () => {
-    const list = markov.generateList()
-    expect(list).toHaveLength(10)
+    const list = markov.generateList(100)
+    expect(list).toHaveLength(100)
   })
 })
