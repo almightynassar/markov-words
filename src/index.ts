@@ -149,7 +149,7 @@ export default class MarkovWords {
     while (!endingFound) {
       // Find a letter
       let token = this.selectToken('letters', tokens)
-      if (token !== '�') {
+      if (token !== '�' && name.length < this.data.meta.max) {
         name += token
         // Shuffle our token keys
         for (let i = 0; i < this.layers; i++) {
@@ -275,6 +275,8 @@ export default class MarkovWords {
         // Set our reference
         let reference = this.data[chain]
         tokens.forEach((element) => {
+          if (!reference.hasOwnProperty(element))
+            throw new ReferenceError("MarkovWords.selectToken: element don't exist.")
           reference = reference[element]
         })
         // Make sure our weights exist
@@ -293,12 +295,12 @@ export default class MarkovWords {
               }
             }
           } else {
-            throw new Error("MarkovWords.selectToken: weights dont' exits")
+            throw new TypeError("MarkovWords.selectToken: weights don't exist")
           }
         }
       }
     } catch (error) {
-      console.log(error)
+      if (error instanceof TypeError) console.log(error.message)
     }
     return '�'
   }
