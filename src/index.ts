@@ -71,7 +71,7 @@ export default class MarkovWords {
    */
   public rebuild(list?: Array<string>) {
     this.reset()
-    if (Array.isArray(list)) {
+    if (Array.isArray(list) && list.length > 0) {
       this.build(list)
       this.scaleWeights()
     }
